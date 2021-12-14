@@ -1,8 +1,16 @@
-import {Request, Response} from 'express';
-import AccountController from '../../controllers/account';
+import {Request, Response, NextFunction} from 'express';
+import * as Joi from 'joi';
+import AccountController from '@controllers/account';
+import {PasswordPattern} from '@common/pattern';
+
+export const requestBody: Joi.ObjectSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().pattern(PasswordPattern).required(),
+  repeatPassword: Joi.string().pattern(PasswordPattern).required(),
+});
 
 export const swagger = {
-  summary: 'Register a new user',
+  summary: 'Update the user',
   tags: ['account'],
   responses: {
     '201': {

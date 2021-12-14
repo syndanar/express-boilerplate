@@ -1,6 +1,7 @@
 {
   "extends": "./node_modules/gts/tsconfig-google.json",
   "compilerOptions": {
+    "esModuleInterop": true,
     "rootDir": ".",
     "outDir": "build",
     "baseUrl": "./",                                     /* Specify the base directory to resolve non-relative module names. */
@@ -10,8 +11,12 @@
       "@controllers/*": ["src/controllers/*"],
       "@plugins/*": ["src/plugins/*"],
       "@routes/*": ["src/routes/*"],
-      "@utils/*": ["src/utils/*"],
-    }
+      "@utils/*": ["src/utils/*"]
+    },
+    "lib": [
+      "es2016",
+      "dom"
+    ]
   },
   "include": [
     "src/**/*.ts",

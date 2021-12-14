@@ -23,7 +23,7 @@ import Joi from 'joi'
  * 
  * Если запрос не содержит тело запроса, тогда экспорт схемы не требуется
  */
-export const schema: Joi.ObjectSchema = {}
+export const requestBody: Joi.ObjectSchema = {}
 
 /** 
  * Объект описания маршрута, подробнее:

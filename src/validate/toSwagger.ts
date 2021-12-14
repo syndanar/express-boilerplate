@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 import j2s from 'joi-to-swagger';
 
 import schemas from './index';

@@ -4,13 +4,14 @@ import {PasswordPattern} from '@common/pattern';
 
 import AccountController from '@controllers/account';
 
-export enum ACCOUNT_LOGIN_STATUS {
+export enum AccountLoginStatus {
   SUCCESS,
   USERNAME_NOT_FOUND,
   PASSWORD_INCORRECT,
+  BAD_REQUEST
 }
 
-export const schema: Joi.ObjectSchema = Joi.object({
+export const requestBody: Joi.ObjectSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().pattern(PasswordPattern).required(),
 });
@@ -29,7 +30,7 @@ export const swagger = {
     '406': {
       description: 'User with the specified username was not found',
     },
-  },
+  }
 };
 
 export const handler = async (
@@ -37,17 +38,23 @@ export const handler = async (
   res: Response,
   next: NextFunction
 ) => {
-  const controller = new AccountController();
-  const status = await controller.login(req, res);
+  const controller = new AccountController()
+  const status = await controller.login(req, res)
   switch (status) {
-    case ACCOUNT_LOGIN_STATUS.SUCCESS:
-      res.statusCode = 200;
+    case AccountLoginStatus.SUCCESS:
+      res.status(200);
       break;
-    case ACCOUNT_LOGIN_STATUS.USERNAME_NOT_FOUND:
-      res.statusCode = 406;
+    case AccountLoginStatus.BAD_REQUEST:
+      res.status(400);
+      res.send('Bad request')
       break;
-    case ACCOUNT_LOGIN_STATUS.PASSWORD_INCORRECT:
-      res.statusCode = 401;
+    case AccountLoginStatus.USERNAME_NOT_FOUND:
+      res.status(406);
+      res.send('No such user found')
+      break;
+    case AccountLoginStatus.PASSWORD_INCORRECT:
+      res.status(401);
+      res.send('Invalid password')
       break;
   }
   next();
