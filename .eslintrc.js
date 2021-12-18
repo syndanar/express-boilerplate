@@ -1,20 +1,23 @@
 module.exports = {
-  env: {
-    es2021: true,
-    node: true,
+  'env': {
+    'es2021': true,
+    'node': true,
   },
-  extends: [
-    "./node_modules/gts/"
+  'extends': [
+    'google',
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaVersion: 13,
-    sourceType: 'module',
-    project: './tsconfig.eslint.json'
+  'parser': '@typescript-eslint/parser',
+  'parserOptions': {
+    'ecmaVersion': 13,
+    'sourceType': 'module',
   },
-  plugins: [
+  'plugins': [
     '@typescript-eslint',
   ],
-  rules: {
+  'rules': {
+    'max-len': [2, 120, 2],
   },
 };

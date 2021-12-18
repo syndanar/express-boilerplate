@@ -4,7 +4,7 @@ import {PasswordPattern} from '@common/pattern';
 
 import AccountController from '@controllers/account';
 
-export enum AccountLoginStatus {
+export enum Status {
   SUCCESS,
   USERNAME_NOT_FOUND,
   PASSWORD_INCORRECT,
@@ -30,31 +30,31 @@ export const swagger = {
     '406': {
       description: 'User with the specified username was not found',
     },
-  }
+  },
 };
 
 export const handler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction,
 ) => {
-  const controller = new AccountController()
-  const status = await controller.login(req, res)
+  const controller = new AccountController();
+  const status = await controller.login(req, res);
   switch (status) {
-    case AccountLoginStatus.SUCCESS:
+    case Status.SUCCESS:
       res.status(200);
       break;
-    case AccountLoginStatus.BAD_REQUEST:
+    case Status.BAD_REQUEST:
       res.status(400);
-      res.send('Bad request')
+      res.send('Bad request');
       break;
-    case AccountLoginStatus.USERNAME_NOT_FOUND:
+    case Status.USERNAME_NOT_FOUND:
       res.status(406);
-      res.send('No such user found')
+      res.send('No such user found');
       break;
-    case AccountLoginStatus.PASSWORD_INCORRECT:
+    case Status.PASSWORD_INCORRECT:
       res.status(401);
-      res.send('Invalid password')
+      res.send('Invalid password');
       break;
   }
   next();

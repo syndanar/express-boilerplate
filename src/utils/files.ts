@@ -1,4 +1,4 @@
-const { resolve } = require('path');
+const {resolve} = require('path');
 const fs = require('fs');
 
 export interface GetFilesOptions {
@@ -6,6 +6,12 @@ export interface GetFilesOptions {
   absolutePath?: boolean
 }
 
+/**
+ * Get files in directory recursive
+ * @param {string} dir
+ * @param {GetFilesOptions} options
+ * @return {Promise<string[]>}
+ */
 export async function getFiles(dir: string, options: GetFilesOptions): Promise<string[]> {
   const resultFiles: string[] = [];
   const searchDir = dir;
@@ -14,19 +20,19 @@ export async function getFiles(dir: string, options: GetFilesOptions): Promise<s
     resources.forEach((resource: string) => {
       const fullPath: string = resolve(dir, resource);
       const isDir = fs.statSync(fullPath).isDirectory();
-      if(isDir) {
-        walkDir(fullPath)
+      if (isDir) {
+        walkDir(fullPath);
       } else {
         /** Generate fileName */
         const pushFileName: string = options.absolutePath ? fullPath : fullPath.substr(searchDir.length);
 
         /** Check match pattern if exists */
-        if(options.pattern && !resource.match(options.pattern)) return;
+        if (options.pattern && !resource.match(options.pattern)) return;
 
-        resultFiles.push(pushFileName)
+        resultFiles.push(pushFileName);
       }
-    })
-  }
-  await walkDir(dir)
-  return resultFiles
+    });
+  };
+  await walkDir(dir);
+  return resultFiles;
 }

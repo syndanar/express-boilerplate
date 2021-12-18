@@ -1,6 +1,5 @@
 import {Request, Response, NextFunction} from 'express';
 import * as Joi from 'joi';
-import AccountController from '@controllers/account';
 import {PasswordPattern} from '@common/pattern';
 
 export const requestBody: Joi.ObjectSchema = Joi.object({
@@ -22,7 +21,5 @@ export const swagger = {
   },
 };
 
-export const handler = async (req: Request, res: Response) => {
-  const controller = new AccountController();
-  controller.update(req, res);
+export const handler = async (req: Request, res: Response, next: NextFunction) => {
 };

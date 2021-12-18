@@ -1,93 +1,100 @@
 import {Request, Response} from 'express';
-import joiSchemaRegister from '../validate/account/register';
-import * as Joi from 'joi';
 import {joiSchemaValidate} from '@utils/validate';
-import { AccountLoginStatus } from '@routes/account/login-post';
-import { AccountRegisterStatus } from '@/routes/account/register-post';
-import { AccountModel } from '@/models/account';
-import bcrypt from 'bcrypt'
-import * as randToken from 'rand-token'
+import * as routeLoginPost from '@routes/account/login-post';
+import * as routeRegisterPost from '@/routes/account/register-post';
+import {AccountModel, IAccount} from '@/models/account';
+import * as bcrypt from 'bcrypt';
 
 const saltRounds = 12;
 
 const passwordHash = (password: string) => {
-  const salt = bcrypt.genSaltSync(saltRounds)
-  return bcrypt.hashSync(password, salt)
-}
+  const salt = bcrypt.genSaltSync(saltRounds);
+  return bcrypt.hashSync(password, salt);
+};
 
-const passwordCompare = async (password: string, hash: string) => {
-  return new Promise(resolve => {
+const passwordCompare = (password: string, hash: string): Promise<boolean> => {
+  return new Promise((resolve) => {
     bcrypt.compare(password, hash, function(err, result) {
-      if(result) {
-        resolve(true)
+      if (result) {
+        resolve(true);
       } else {
-        resolve(false)
+        resolve(false);
       }
-    })
-  })
-}
+    });
+  });
+};
 
 const authData = (accountDocument: any) => {
   return {
     id: accountDocument._id.toString(),
     token: accountDocument.token,
-    renewToken: accountDocument.renewToken
-  }
-}
+    renewToken: accountDocument.renewToken,
+  };
+};
 
+/**
+ * Account controller
+ */
 class AccountController {
-
-  async register(req: Request, res: Response): Promise<AccountRegisterStatus> {
-    return new Promise(async (resolve) => {
-      const value = joiSchemaValidate(joiSchemaRegister, req, res);
+  /**
+   * Register a new user
+   * @param {e.Request} req
+   * @param {e.Response} res
+   * @return {Promise<routeRegisterPost.Status>}
+   */
+  async register(req: Request, res: Response): Promise<routeRegisterPost.Status> {
+    return new Promise((resolve) => {
+      const value = joiSchemaValidate(routeRegisterPost.requestBody, req, res);
       if (value) {
-        if(value.password !== value.repeatPassword) {
-          resolve(AccountRegisterStatus.REPEAT_PASSWORD_ERROR)
+        if (value.password !== value.repeatPassword) {
+          resolve(routeRegisterPost.Status.REPEAT_PASSWORD_ERROR);
         } else {
-          const dublicateExists = await AccountModel.exists({ email: value.email });
-          if(!dublicateExists) {
-            value.password = passwordHash(value.password)
-            const account = new AccountModel(value)
-            const accountDocument = await account.save();
-            res.json(authData(accountDocument))
-            resolve(AccountRegisterStatus.SUCCESS)
+          const dublicateExists = AccountModel.exists({email: value.email});
+          if (!dublicateExists) {
+            value.password = passwordHash(value.password);
+            const account = new AccountModel(value);
+            const accountDocument = account.save();
+            res.json(authData(accountDocument));
+            resolve(routeRegisterPost.Status.SUCCESS);
           } else {
-            resolve(AccountRegisterStatus.USERNAME_ALREADY_EXISTS)
+            resolve(routeRegisterPost.Status.USERNAME_ALREADY_EXISTS);
           }
         }
       } else {
-        resolve(AccountRegisterStatus.BAD_REQUEST)
+        resolve(routeRegisterPost.Status.BAD_REQUEST);
       }
-    })
+    });
   }
 
-  async login(req: Request, res: Response): Promise<AccountLoginStatus> {
-    return new Promise(async (resolve) => {
-      const value = joiSchemaValidate(joiSchemaRegister, req, res);
+  /**
+   * Login the user
+   * @param {e.Request} req
+   * @param {e.Response} res
+   * @return {Promise<routeLoginPost.Status>}
+   */
+  async login(req: Request, res: Response): Promise<routeLoginPost.Status> {
+    return new Promise((resolve) => {
+      const value = joiSchemaValidate(routeLoginPost.requestBody, req, res);
       if (value) {
-        const accountDocument = await AccountModel.findOne({ email: value.email })
-        if(accountDocument === null) {
-          resolve(AccountLoginStatus.USERNAME_NOT_FOUND)
-        } else {
-          if(await passwordCompare(value.password, accountDocument.password)) {
-            res.json(authData(accountDocument))
-            resolve(AccountLoginStatus.SUCCESS)
-          } else {
-            resolve(AccountLoginStatus.PASSWORD_INCORRECT)
-          }
-        }
+        AccountModel.findOne({email: value.email})
+            .then((accountDocument: IAccount) => {
+              if (accountDocument === null) {
+                resolve(routeLoginPost.Status.USERNAME_NOT_FOUND);
+              } else {
+                passwordCompare(value.password, accountDocument.password)
+                    .then((isEqual: boolean) => {
+                      if (isEqual ) {
+                        res.json(authData(accountDocument));
+                        resolve(routeLoginPost.Status.SUCCESS);
+                      } else {
+                        resolve(routeLoginPost.Status.PASSWORD_INCORRECT);
+                      }
+                    });
+              }
+            });
       }
-      resolve(AccountLoginStatus.BAD_REQUEST)
-    })
-  }
-
-  async update(req: Request, res: Response) {
-    const value = joiSchemaValidate(joiSchemaRegister, req, res);
-    if (value) {
-      res.json({
-        message: 'ok',
-      });
-    }
+      resolve(routeLoginPost.Status.BAD_REQUEST);
+    });
   }
 }
 export default AccountController;

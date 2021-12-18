@@ -1,11 +1,19 @@
 import {Request, Response} from 'express';
 import * as Joi from 'joi';
 
+/**
+ * Validate request object by joiSchema and generate response if validate failed
+ * @param {Joi.ObjectSchema} joiSchema
+ * @param {e.Request} req
+ * @param {e.Response} res
+ * @param {boolean} allowUnknown
+ * @return {any}
+ */
 export function joiSchemaValidate(
-  joiSchema: Joi.ObjectSchema,
-  req: Request,
-  res: Response,
-  allowUnknown = false
+    joiSchema: Joi.ObjectSchema,
+    req: Request,
+    res: Response,
+    allowUnknown = false,
 ) {
   const validate = joiSchema.validate(req.body, {
     abortEarly: false,

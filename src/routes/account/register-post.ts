@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import AccountController from '@controllers/account';
 import {PasswordPattern} from '@common/pattern';
 
-export enum AccountRegisterStatus {
+export enum Status {
   SUCCESS,
   USERNAME_ALREADY_EXISTS,
   REPEAT_PASSWORD_ERROR,
@@ -33,30 +33,30 @@ export const swagger = {
 };
 
 export const handler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
+    req: Request,
+    res: Response,
+    next: NextFunction,
 ) => {
   const controller = new AccountController();
   const status = await controller.register(req, res);
   switch (status) {
-    case AccountRegisterStatus.SUCCESS:
+    case Status.SUCCESS:
       res.status(200);
       break;
-    case AccountRegisterStatus.BAD_REQUEST:
+    case Status.BAD_REQUEST:
       res.status(400);
       break;
-    case AccountRegisterStatus.USERNAME_ALREADY_EXISTS:
+    case Status.USERNAME_ALREADY_EXISTS:
       res.status(409);
       res.json({
-        message: "Username already exists"
-      })
+        message: 'Username already exists',
+      });
       break;
-    case AccountRegisterStatus.REPEAT_PASSWORD_ERROR:
+    case Status.REPEAT_PASSWORD_ERROR:
       res.status(409);
       res.json({
-        message: "The repeat password does not match the password"
-      })
+        message: 'The repeat password does not match the password',
+      });
       break;
   }
   next();
