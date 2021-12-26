@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as path from 'path';
 import j2s from 'joi-to-swagger';
 import {getFiles} from '@utils/files';
+import {parentPort} from 'worker_threads';
 
 const HttpMethods = ['get', 'post', 'put', 'patch', 'delete'];
 
@@ -21,15 +22,18 @@ const files = (): Promise<File[]> => {
     let completedMethods = 0;
     const resultFiles: File[] = [];
     HttpMethods.forEach(async (method: string) => {
-      const pattern = new RegExp(`^.*-${method}\.ts$`, 'gi');
+      const pattern = new RegExp(`^.*-${method}.ts$`, 'gi');
       const files = await getFiles(routesDir, {
         pattern,
         absolutePath: true,
       });
       files.forEach((file: string) => {
+        const filePath = '/api/' + file.slice(routesDir.length, file.lastIndexOf('-'));
+        const url = String(filePath).replace(/path.sep/g, '/');
+        console.log(url);
         resultFiles.push({
           method,
-          url: `/api/${file.substr(routesDir.length, file.length - routesDir.length - method.length - 4)}`,
+          url,
           absolutePath: file,
         });
       });
@@ -52,8 +56,8 @@ export default function registerRoutes(server: express.Express): Promise<any> {
     const swData: any = {};
 
     files().then((result) => {
-      console.log(result);
       result.forEach((file: File) => {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const {swagger, handler, requestBody} = require(file.absolutePath);
         swData[file.url] = {};
         swData[file.url][file.method] = swagger;
@@ -74,6 +78,7 @@ export default function registerRoutes(server: express.Express): Promise<any> {
           }
         }
 
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         router[file.method](file.url, handler);
 
@@ -84,7 +89,6 @@ export default function registerRoutes(server: express.Express): Promise<any> {
       });
 
       server.use(router);
-      console.log('resolved');
       resolve(swData);
     });
   });

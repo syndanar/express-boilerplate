@@ -15,21 +15,9 @@ const passwordHash = (password: string) => {
 const passwordCompare = (password: string, hash: string): Promise<boolean> => {
   return new Promise((resolve) => {
     bcrypt.compare(password, hash, function(err, result) {
-      if (result) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
+      resolve(result);
     });
   });
-};
-
-const authData = (accountDocument: any) => {
-  return {
-    id: accountDocument._id.toString(),
-    token: accountDocument.token,
-    renewToken: accountDocument.renewToken,
-  };
 };
 
 /**
@@ -42,26 +30,27 @@ class AccountController {
    * @param {e.Response} res
    * @return {Promise<routeRegisterPost.Status>}
    */
-  async register(req: Request, res: Response): Promise<routeRegisterPost.Status> {
+  async register(req: Request, res: Response): Promise<routeRegisterPost.Status | IAccount> {
     return new Promise((resolve) => {
       const value = joiSchemaValidate(routeRegisterPost.requestBody, req, res);
-      if (value) {
-        if (value.password !== value.repeatPassword) {
-          resolve(routeRegisterPost.Status.REPEAT_PASSWORD_ERROR);
-        } else {
-          const dublicateExists = AccountModel.exists({email: value.email});
-          if (!dublicateExists) {
+
+      if (!value) {
+        resolve(routeRegisterPost.Status.BAD_REQUEST);
+      }
+      if (value.password !== value.repeatPassword) {
+        resolve(routeRegisterPost.Status.REPEAT_PASSWORD_ERROR);
+      } else {
+        AccountModel.exists({email: value.email}).then((exists) => {
+          if (!exists) {
             value.password = passwordHash(value.password);
             const account = new AccountModel(value);
-            const accountDocument = account.save();
-            res.json(authData(accountDocument));
-            resolve(routeRegisterPost.Status.SUCCESS);
+            account.save().then((document: IAccount) => {
+              resolve(document);
+            });
           } else {
             resolve(routeRegisterPost.Status.USERNAME_ALREADY_EXISTS);
           }
-        }
-      } else {
-        resolve(routeRegisterPost.Status.BAD_REQUEST);
+        });
       }
     });
   }
@@ -72,28 +61,24 @@ class AccountController {
    * @param {e.Response} res
    * @return {Promise<routeLoginPost.Status>}
    */
-  async login(req: Request, res: Response): Promise<routeLoginPost.Status> {
+  async login(req: Request, res: Response): Promise<routeLoginPost.Status | IAccount> {
     return new Promise((resolve) => {
       const value = joiSchemaValidate(routeLoginPost.requestBody, req, res);
-      if (value) {
-        AccountModel.findOne({email: value.email})
-            .then((accountDocument: IAccount) => {
-              if (accountDocument === null) {
-                resolve(routeLoginPost.Status.USERNAME_NOT_FOUND);
-              } else {
-                passwordCompare(value.password, accountDocument.password)
-                    .then((isEqual: boolean) => {
-                      if (isEqual ) {
-                        res.json(authData(accountDocument));
-                        resolve(routeLoginPost.Status.SUCCESS);
-                      } else {
-                        resolve(routeLoginPost.Status.PASSWORD_INCORRECT);
-                      }
-                    });
-              }
-            });
+      if (!value) {
+        resolve(routeLoginPost.Status.BAD_REQUEST);
       }
-      resolve(routeLoginPost.Status.BAD_REQUEST);
+      AccountModel.findOne({email: value.email})
+          .then((accountDocument: IAccount) => {
+            if (accountDocument === null) {
+              resolve(routeLoginPost.Status.USERNAME_NOT_FOUND);
+            } else {
+              passwordCompare(value.password, accountDocument.password)
+                  .then((isEqual: boolean) => {
+                    console.log(isEqual);
+                    resolve(isEqual ? accountDocument : routeLoginPost.Status.PASSWORD_INCORRECT);
+                  });
+            }
+          });
     });
   }
 }

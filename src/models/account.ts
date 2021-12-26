@@ -1,31 +1,19 @@
 import {Schema, model, Document} from 'mongoose';
-import * as randToken from 'rand-token';
+import {ITask} from '@/models/task';
 
 export interface IAccount extends Document {
+  _id: Schema.Types.ObjectId,
   email: string;
-  token: string;
-  renewToken: string;
   password: string;
   avatar?: string;
   firstName?: string;
   middleName?: string;
   lastName?: string;
+  tasks: ITask[]
 }
 
 export const AccountSchema = new Schema<IAccount>({
   password: {type: String, required: true},
-  token: {
-    type: String,
-    default: function() {
-      return randToken.generate(64);
-    },
-  },
-  renewToken: {
-    type: String,
-    default: function() {
-      return randToken.generate(64);
-    },
-  },
   email: {
     type: String,
     required: true,
@@ -36,6 +24,7 @@ export const AccountSchema = new Schema<IAccount>({
   middleName: String,
   lastName: String,
   avatar: String,
+  tasks: [{type: Schema.Types.ObjectId, ref: 'Task'}],
 });
 
 export const AccountModel = model<IAccount>('Account', AccountSchema);

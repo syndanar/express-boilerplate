@@ -2,6 +2,7 @@ import {Request, Response, NextFunction} from 'express';
 import * as Joi from 'joi';
 import AccountController from '@controllers/account';
 import {PasswordPattern} from '@common/pattern';
+import {OperationObject} from '@/types/swagger';
 
 export enum Status {
   SUCCESS,
@@ -16,12 +17,25 @@ export const requestBody: Joi.ObjectSchema = Joi.object({
   repeatPassword: Joi.string().pattern(PasswordPattern).required(),
 });
 
-export const swagger = {
-  summary: 'Create a new user',
-  tags: ['account'],
-  responses: {
+export const swagger: OperationObject = {
+  'summary': 'Регистрация пользователя',
+  'description': 'Обработка запросов регистрации нового пользователя',
+  'tags': ['account'],
+  'responses': {
     '201': {
-      description: 'Returns access token and renew token',
+      'description': 'Returns access token and renew token',
+      'content': {
+        'application/json': {
+          'schema': {
+            'type': 'object',
+            'properties': {
+              '_id': {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
     },
     '400': {
       description: 'Bad request',
@@ -38,26 +52,30 @@ export const handler = async (
     next: NextFunction,
 ) => {
   const controller = new AccountController();
-  const status = await controller.register(req, res);
-  switch (status) {
-    case Status.SUCCESS:
-      res.status(200);
-      break;
-    case Status.BAD_REQUEST:
-      res.status(400);
-      break;
-    case Status.USERNAME_ALREADY_EXISTS:
-      res.status(409);
-      res.json({
-        message: 'Username already exists',
-      });
-      break;
-    case Status.REPEAT_PASSWORD_ERROR:
-      res.status(409);
-      res.json({
-        message: 'The repeat password does not match the password',
-      });
-      break;
+  const result = await controller.register(req, res);
+  if (typeof result === 'object') {
+    res.status(201);
+    res.json({
+      _id: result._id,
+    });
+  } else {
+    switch (result) {
+      case Status.BAD_REQUEST:
+        res.status(400);
+        break;
+      case Status.USERNAME_ALREADY_EXISTS:
+        res.status(409);
+        res.json({
+          message: 'Username already exists',
+        });
+        break;
+      case Status.REPEAT_PASSWORD_ERROR:
+        res.status(409);
+        res.json({
+          message: 'The repeat password does not match the password',
+        });
+        break;
+    }
   }
   next();
 };
